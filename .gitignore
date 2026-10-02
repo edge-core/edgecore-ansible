@@ -31,6 +31,9 @@ tests/output/
 # --- Device config backups (contain real device secrets: enable password, IPs) ---
 backups/
 
+# --- Raw customer device configs (contain real secrets/IPs; keep only derived, sanitized examples) ---
+example-topology/
+
 # --- Secrets: never commit real credentials or vault files ---
 # The committed inventory uses placeholders; keep any real/vault files out of git.
 *_vault.yml

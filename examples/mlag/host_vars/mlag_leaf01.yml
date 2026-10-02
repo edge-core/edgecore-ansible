@@ -1,0 +1,60 @@
+---
+# =============================================================================
+# examples/mlag/host_vars/mlag_leaf01.yml
+# Per-leaf MLAG data for LEAF-1. The ONLY differences from mlag_leaf02.yml are:
+#   * mlag_mgmt_ip
+#   * the port_channel values on the two UPLINK groups (4 and 5) -- see the
+#     asymmetry note below.
+# =============================================================================
+
+# Optional management SVI address for this leaf (RFC 5737 placeholder).
+# Set to a real address or remove to skip SVI creation.
+mlag_mgmt_ip: "192.0.2.11/24"
+
+# One entry per MLAG group. Each group binds a port-channel (and its member
+# ethernet ports) into the MLAG domain:
+#   CLI: mlag group <group> domain <mlag_domain> member port-channel <port_channel>
+# role: server  -> dual-homed server access/trunk ports
+# role: uplink   -> uplink port-channel to a spine (adds vlan-trunking etc.)
+mlag_groups:
+  - group: 1
+    port_channel: 1
+    role: server
+    description: "##SERVER-1##"
+    members: ["ethernet 1/1", "ethernet 1/2"]
+    native_vlan: 190
+    tagged_vlans: "110,200"
+  - group: 2
+    port_channel: 2
+    role: server
+    description: "##SERVER-2##"
+    members: ["ethernet 1/3", "ethernet 1/4"]
+    native_vlan: 190
+    tagged_vlans: "110,200"
+  - group: 3
+    port_channel: 3
+    role: server
+    description: "##SERVER-3##"
+    members: ["ethernet 1/5", "ethernet 1/6"]
+    native_vlan: 190
+    tagged_vlans: "110,200"
+  # --- ASYMMETRY (uplinks) ---
+  # Each uplink group reaches a DIFFERENT spine on each leaf, so the group->
+  # port-channel mapping is deliberately SWAPPED between the two leaves. On
+  # LEAF-1: group 4 -> port-channel 4 (SPINE-A), group 5 -> port-channel 5
+  # (SPINE-B). On LEAF-2 these two are swapped. Keep both leaves consistent
+  # with your physical cabling.
+  - group: 4
+    port_channel: 4            # LEAF-2 uses port-channel 5 here (swap)
+    role: uplink
+    description: "##UPLINK-SPINE-A##"
+    members: ["ethernet 1/19", "ethernet 1/20"]
+    native_vlan: 110
+    tagged_vlans: "110,190,200"
+  - group: 5
+    port_channel: 5            # LEAF-2 uses port-channel 4 here (swap)
+    role: uplink
+    description: "##UPLINK-SPINE-B##"
+    members: ["ethernet 1/21", "ethernet 1/22"]
+    native_vlan: 110
+    tagged_vlans: "110,190,200"

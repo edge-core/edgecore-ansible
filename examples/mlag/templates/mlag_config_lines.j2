@@ -1,0 +1,82 @@
+{# =============================================================================
+   mlag_config_lines.j2
+   Renders, from the per-host MLAG variables, the Edge-core CLI commands to run
+   "line by line" inside configuration mode. Modeled on the project's
+   roles/edgecore_cli/templates/config_lines.j2.
+
+   This template does NOT emit the outer "configure" / "end"; the playbook
+   controls those. Emission order (matches the real leaf running-config):
+     1. VLAN database block
+     2. member / uplink / peer-link interfaces (incl. channel-group binding)
+     3. port-channel description blocks
+     4. mlag domain + mlag group bindings
+     5. optional management SVI
+   ============================================================================= #}
+{# ---- 1) VLAN definitions ---- #}
+{% if mlag_vlans %}
+vlan database
+{% for v in mlag_vlans %}
+VLAN {{ v.id }} name {{ v.name }} media ethernet
+{% endfor %}
+exit
+{% endif %}
+{# ---- 2a) Member interfaces for each MLAG group ---- #}
+{% for g in mlag_groups %}
+{% for intf in g.members %}
+interface {{ intf }}
+description {{ g.description }}
+{% if g.role == 'server' %}
+flowcontrol
+no mac-learning
+switchport allowed vlan add {{ g.native_vlan }} untagged
+switchport allowed vlan add {{ g.tagged_vlans }} tagged
+switchport native vlan {{ g.native_vlan }}
+switchport allowed vlan remove 1
+spanning-tree spanning-disabled
+channel-group {{ g.port_channel }}
+{% elif g.role == 'uplink' %}
+flowcontrol
+switchport allowed vlan add {{ g.tagged_vlans }} tagged
+switchport mode trunk
+switchport native vlan {{ g.native_vlan }}
+switchport allowed vlan remove 1
+spanning-tree spanning-disabled
+vlan-trunking
+no loopback-detection
+channel-group {{ g.port_channel }}
+{% endif %}
+exit
+{% endfor %}
+{% endfor %}
+{# ---- 2b) Peer-link member interfaces ---- #}
+{% for intf in mlag_peer_link.members %}
+interface {{ intf }}
+description {{ mlag_peer_link.description }}
+no mac-learning
+switchport allowed vlan add 1,{{ mlag_all_vlans }} tagged
+switchport mode trunk
+spanning-tree spanning-disabled
+no loopback-detection
+channel-group {{ mlag_peer_link.port_channel }}
+exit
+{% endfor %}
+{# ---- 3) Port-channel description blocks ---- #}
+{% for g in mlag_groups %}
+interface port-channel {{ g.port_channel }}
+description {{ g.description }}
+exit
+{% endfor %}
+interface port-channel {{ mlag_peer_link.port_channel }}
+description {{ mlag_peer_link.description }}
+exit
+{# ---- 4) MLAG domain + group bindings ---- #}
+mlag domain {{ mlag_domain }} peer-link port-channel {{ mlag_peer_link.port_channel }}
+{% for g in mlag_groups %}
+mlag group {{ g.group }} domain {{ mlag_domain }} member port-channel {{ g.port_channel }}
+{% endfor %}
+{# ---- 5) Optional management SVI ---- #}
+{% if mlag_mgmt_ip is defined and mlag_mgmt_ip %}
+interface vlan {{ mlag_vlans[0].id }}
+ip address {{ mlag_mgmt_ip }}
+exit
+{% endif %}

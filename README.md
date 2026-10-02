@@ -319,7 +319,26 @@ ansible-playbook site.yml -vvvv
 
 ---
 
-## 12. Delivering the collection to customers (no Galaxy required)
+## 12. Examples
+
+The [`examples/`](examples/) directory holds copy-and-adapt, variable-driven
+playbooks derived from real customer deployments (sanitized — no real secrets or
+IPs).
+
+- [`examples/mlag/`](examples/mlag/) — provision **MLAG** on an Edge-core leaf
+  pair. It uses this project's collection (`ansible_network_os:
+  edgecore.edgecos.edgecore`) and sends CLI line by line via
+  `ansible.netcommon.cli_command`, modeling the per-leaf uplink asymmetry in
+  `host_vars`. See its [README](examples/mlag/README.md) for the sanitized
+  topology, the variable→CLI mapping, and what to change.
+
+> MLAG and other feature CLI syntax can vary by switch model and firmware. Treat
+> the device CLI guide and context-sensitive `?` help as the source of truth and
+> adjust the example's templates if your model differs.
+
+---
+
+## 13. Delivering the collection to customers (no Galaxy required)
 
 You do **not** need Ansible Galaxy to give a customer this collection.
 
@@ -411,7 +430,7 @@ ansible edgecore_switches -m ansible.netcommon.cli_command -a "command='show ver
 
 ---
 
-## 13. References
+## 14. References
 
 - Edge-core Enterprise Switch FAQ: <https://support.edge-core.com/hc/en-us/categories/360000061794-Enterprise-Switch-FAQs>
 - `ansible.netcommon.cli_command` module docs: <https://docs.ansible.com/projects/ansible/latest/collections/ansible/netcommon/cli_command_module.html>

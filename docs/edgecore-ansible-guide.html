@@ -124,6 +124,7 @@
         <li><a href="#multiline">Send multiple lines vs line by line</a></li>
         <li><a href="#security">Security: Ansible Vault</a></li>
         <li><a href="#troubleshoot">Troubleshooting</a></li>
+        <li><a href="#examples">Examples</a></li>
         <li><a href="#delivery">Delivering the collection to customers (no Galaxy required)</a></li>
         <li><a href="#references">References</a></li>
       </ol>
@@ -379,7 +380,19 @@ ansible-playbook site.yml --ask-vault-pass</code></pre>
     <p>Use <code>-vvvv</code> to observe the actual CLI sent and the device responses:</p>
     <pre><code>ansible-playbook site.yml -vvvv</code></pre>
 
-    <h2 id="delivery">12. Delivering the collection to customers (no Galaxy required)</h2>
+    <h2 id="examples">12. Examples</h2>
+    <p>The <code>examples/</code> directory holds copy-and-adapt, variable-driven playbooks derived from
+    real customer deployments (sanitized — no real secrets or IPs).</p>
+    <p><code>examples/mlag/</code> provisions <strong>MLAG</strong> on an Edge-core leaf pair. It uses
+    this project's collection (<code>ansible_network_os: edgecore.edgecos.edgecore</code>) and sends CLI
+    line by line via <code>ansible.netcommon.cli_command</code>, modeling the per-leaf uplink asymmetry in
+    <code>host_vars</code>. See <code>examples/mlag/README.md</code> for the sanitized topology, the
+    variable&rarr;CLI mapping, and what to change.</p>
+    <div class="note">MLAG and other feature CLI syntax can vary by switch model and firmware. Treat the
+    device CLI guide and context-sensitive <code>?</code> help as the source of truth and adjust the
+    example's templates if your model differs.</div>
+
+    <h2 id="delivery">13. Delivering the collection to customers (no Galaxy required)</h2>
     <p>You do <strong>not</strong> need Ansible Galaxy to give a customer this collection.</p>
     <div class="note"><strong>No build/compile step is required.</strong> The plugins are plain Python
     (<code>plugins/terminal/edgecore.py</code> and <code>plugins/cliconf/edgecore.py</code>); the
@@ -439,7 +452,7 @@ ansible-galaxy collection install edgecore-edgecos-0.1.0.tar.gz</code></pre>
     <p>In every case, confirm it works with the read-only smoke test:</p>
     <pre><code>ansible edgecore_switches -m ansible.netcommon.cli_command -a "command='show version'"</code></pre>
 
-    <h2 id="references">13. References</h2>
+    <h2 id="references">14. References</h2>
     <ul>
       <li><a href="https://support.edge-core.com/hc/en-us/categories/360000061794-Enterprise-Switch-FAQs">Edge-core Enterprise Switch FAQ</a></li>
       <li><a href="https://docs.ansible.com/projects/ansible/latest/collections/ansible/netcommon/cli_command_module.html">ansible.netcommon.cli_command module docs</a></li>
