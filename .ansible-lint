@@ -1,0 +1,13 @@
+# ansible-lint configuration
+#
+# Exclude project-local build/runtime artifacts that are not part of the
+# collection source. These directories are generated locally (project-local
+# CPython build and virtualenvs) and intentionally kept out of version control;
+# they contain third-party files (e.g. CPython's own non-UTF-8 stdlib test
+# fixtures) that must not be linted as if they were project content.
+exclude_paths:
+  - .python313/
+  - .python313-build/
+  - .venv/
+  - .venv-lint/
+  - .agents/

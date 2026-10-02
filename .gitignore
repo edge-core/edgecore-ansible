@@ -1,0 +1,46 @@
+# =============================================================================
+# .gitignore for the edgecore-ansible project
+# =============================================================================
+
+# --- Python virtual environments (local, large; never commit) ---
+.venv/
+.venv-lint/
+.python313/
+
+# --- Locally built CPython / toolchain artifacts ---
+*.so
+*.o
+
+# --- Python bytecode caches ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Built Ansible collection artifacts (rebuild with `ansible-galaxy collection build`) ---
+*.tar.gz
+collection/ansible_collections/*/*/tests/output/
+
+# --- ansible-test / internal working artifacts ---
+.agents/
+tests/output/
+
+# --- Ansible runtime noise ---
+*.retry
+*.log
+
+# --- Device config backups (contain real device secrets: enable password, IPs) ---
+backups/
+
+# --- Secrets: never commit real credentials or vault files ---
+# The committed inventory uses placeholders; keep any real/vault files out of git.
+*_vault.yml
+*vault_pass*
+.vault_pass
+inventory/group_vars/*secret*
+inventory/host_vars/*secret*
+
+# --- Editor / OS cruft ---
+.vscode/
+.idea/
+.DS_Store
+*.swp

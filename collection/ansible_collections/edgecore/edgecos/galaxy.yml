@@ -1,0 +1,24 @@
+namespace: edgecore
+name: edgecos
+version: 0.1.0
+readme: README.md
+authors:
+  - Macauley Cheng <macauley_cheng@accton.com>
+description: >-
+  Ansible network platform plugins (terminal + cliconf) for Edge-core Enterprise
+  Switches (ECS series, IOS-like CLI). Enables the generic ansible.netcommon
+  cli_command / cli_config modules to work robustly by setting
+  ansible_network_os: edgecore.edgecos.edgecore
+license:
+  - GPL-3.0-or-later
+tags:
+  - networking
+  - edgecore
+  - enterprise_switch
+  - switch
+  - cli
+dependencies:
+  ansible.netcommon: ">=5.0.0"
+repository: https://github.com/edge-core/edgecos-ansible
+homepage: https://github.com/edge-core/edgecos-ansible
+issues: https://github.com/edge-core/edgecos-ansible/issues

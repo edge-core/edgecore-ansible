@@ -1,0 +1,46 @@
+{# =============================================================================
+   config_lines.j2
+   Generates, from the variables, the list of Edge-core CLI commands to run
+   "line by line after entering config mode".
+   Note: this does NOT include the outermost configure / end; those are
+   controlled by the task.
+   ============================================================================= #}
+{# ---- VLAN definitions ---- #}
+{% if edgecore_cli_vlans %}
+vlan database
+{% for v in edgecore_cli_vlans %}
+vlan {{ v.id }} name {{ v.name }} media ethernet
+{% endfor %}
+exit
+{% endif %}
+{# ---- Physical interfaces ---- #}
+{% for intf in edgecore_cli_interfaces %}
+interface {{ intf.name }}
+{% if intf.description is defined %}
+description {{ intf.description }}
+{% endif %}
+{% if intf.mode == 'access' %}
+switchport mode access
+switchport access vlan {{ intf.access_vlan }}
+{% elif intf.mode == 'trunk' %}
+switchport mode trunk
+switchport trunk allowed vlan add {{ intf.trunk_allowed_vlans }}
+{% endif %}
+{% if intf.enabled | default(true) %}
+no shutdown
+{% else %}
+shutdown
+{% endif %}
+exit
+{% endfor %}
+{# ---- SVI / VLAN interface IP ---- #}
+{% for svi in edgecore_cli_svi | default([]) %}
+interface vlan {{ svi.vlan_id }}
+{% if svi.ipv4 is defined %}
+ip address {{ svi.ipv4 }}
+{% endif %}
+{% if svi.enabled | default(true) %}
+no shutdown
+{% endif %}
+exit
+{% endfor %}

@@ -1,0 +1,8 @@
+---
+# Install the required Ansible collections:
+#   ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: ansible.netcommon
+    version: ">=5.0.0"
+  # If you prefer to use the IOS-compatible modules (cisco.ios.ios_*), also install:
+  # - name: cisco.ios
