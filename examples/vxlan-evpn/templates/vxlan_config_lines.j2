@@ -1,0 +1,62 @@
+{# =============================================================================
+   vxlan_config_lines.j2
+   Renders, from the per-host VXLAN BGP-EVPN variables, the Edge-core CLI
+   commands to run "line by line" inside configuration mode. Modeled on the
+   project's roles/edgecore_cli/templates/config_lines.j2 and the sibling
+   examples/mlag/templates/mlag_config_lines.j2.
+
+   This template does NOT emit the outer "configure" / "end"; the playbook
+   controls those.
+
+   The source running-config uses lone "!" lines as context separators between
+   stanzas (e.g. before "ip vrf bind" and before "router bgp ... vrf"). Those
+   are NOT real config commands, so this template OMITS all bare "!" lines; the
+   playbook sends only real configuration commands.
+
+   Emission order (matches the source Switch A / Switch B CLI):
+     1. VLAN database block (underlay VLAN + access VLAN)
+     2. access SVI IP + underlay (VTEP source) SVI IP
+     3. access ethernet port (untagged + native access VLAN)
+     4. VRF create + bind the access VLAN
+     5. VXLAN: source-interface, L2 VNI (access-port + r-vtep flood),
+        L3 VNI (vrf + bgp-evpn flood)
+     6. router bgp: EVPN peering with the remote VTEP (advertise-all-vni)
+     7. router bgp vrf: redistribute connected + advertise ipv4 unicast
+   ============================================================================= #}
+{# ---- 1) VLAN database (underlay + access) ---- #}
+vlan database
+vlan {{ underlay_vlan }}
+vlan {{ access_vlan }}
+exit
+{# ---- 2) Access SVI IP + underlay (VTEP source) SVI IP ---- #}
+interface vlan {{ access_vlan }}
+ip address {{ access_svi_ip }}
+exit
+interface vlan {{ underlay_vlan }}
+ip address {{ vtep_ip }} 255.255.255.0
+exit
+{# ---- 3) Access ethernet port ---- #}
+interface {{ access_port }}
+switchport allow vlan add {{ access_vlan }} untagged
+switchport native vlan {{ access_vlan }}
+exit
+{# ---- 4) VRF create + bind the access VLAN ---- #}
+ip vrf {{ vrf }}
+ip vrf bind {{ vrf }} {{ access_vlan }}
+{# ---- 5) VXLAN source + L2 VNI + L3 VNI ---- #}
+vxlan source-interface vlan {{ underlay_vlan }}
+vxlan vni {{ l2_vni }}
+vxlan vni {{ l2_vni }} access-port interface {{ access_port }}
+vxlan vni {{ l2_vni }} flood r-vtep {{ remote_vtep_ip }}
+vxlan vni {{ l3_vni }}
+vxlan vni {{ l3_vni }} vrf {{ vrf }}
+vxlan vni {{ l3_vni }} flood protocol bgp-evpn
+{# ---- 6) router bgp: EVPN peering with the remote VTEP ---- #}
+router bgp {{ bgp_asn }}
+neighbor {{ remote_vtep_ip }} remote-as {{ bgp_asn }}
+l2vpn evpn advertise-all-vni
+l2vpn evpn neighbor {{ remote_vtep_ip }} activate
+{# ---- 7) router bgp vrf: redistribute + advertise ipv4 unicast ---- #}
+router bgp {{ bgp_asn }} vrf {{ vrf }}
+redistribute connected
+l2vpn evpn advertise ipv4 unicast

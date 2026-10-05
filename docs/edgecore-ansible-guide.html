@@ -388,6 +388,12 @@ ansible-playbook site.yml --ask-vault-pass</code></pre>
     line by line via <code>ansible.netcommon.cli_command</code>, modeling the per-leaf uplink asymmetry in
     <code>host_vars</code>. See <code>examples/mlag/README.md</code> for the sanitized topology, the
     variable&rarr;CLI mapping, and what to change.</p>
+    <p><code>examples/vxlan-evpn/</code> provisions a 2-VTEP <strong>VXLAN BGP-EVPN</strong> fabric
+    (L2 VNI + L3 VNI/VRF) on an Edge-core switch pair. It uses the same conventions (collection
+    <code>ansible_network_os: edgecore.edgecos.edgecore</code>, line-by-line
+    <code>ansible.netcommon.cli_command</code>), modeling the per-switch peer-VTEP symmetry in
+    <code>host_vars</code>. See <code>examples/vxlan-evpn/README.md</code> for the sanitized topology,
+    the variable&rarr;CLI mapping, and the 2-VTEP limitation note.</p>
     <div class="note">MLAG and other feature CLI syntax can vary by switch model and firmware. Treat the
     device CLI guide and context-sensitive <code>?</code> help as the source of truth and adjust the
     example's templates if your model differs.</div>

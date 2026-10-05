@@ -1,0 +1,19 @@
+# =============================================================================
+# examples/vxlan-evpn/inventory.yml
+# The two VTEP switches for the copy-and-adapt VXLAN BGP-EVPN example.
+# Change the ansible_host values below to your two switches' MANAGEMENT IPs.
+# These are PLACEHOLDER addresses (RFC 5737 192.0.2.0/24), not real devices.
+#
+# IMPORTANT: ansible_host is the out-of-band MANAGEMENT IP Ansible connects to.
+# It is NOT the data-plane VTEP / underlay / overlay address (19.19.19.x /
+# 17.17.17.x / 20.20.20.x) configured by the playbook -- those live in
+# host_vars/ and group_vars/.
+# =============================================================================
+all:
+  children:
+    vxlan_vteps:
+      hosts:
+        vtep_a:
+          ansible_host: 192.0.2.11   # CHANGE ME: Switch A management IP
+        vtep_b:
+          ansible_host: 192.0.2.12   # CHANGE ME: Switch B management IP

@@ -331,6 +331,12 @@ IPs).
   `ansible.netcommon.cli_command`, modeling the per-leaf uplink asymmetry in
   `host_vars`. See its [README](examples/mlag/README.md) for the sanitized
   topology, the variable→CLI mapping, and what to change.
+- [`examples/vxlan-evpn/`](examples/vxlan-evpn/) — provision a 2-VTEP **VXLAN
+  BGP-EVPN** fabric (L2 VNI + L3 VNI/VRF) on an Edge-core switch pair. Same
+  conventions (collection network_os, line-by-line `cli_command`), modeling the
+  per-switch peer-VTEP symmetry in `host_vars`. See its
+  [README](examples/vxlan-evpn/README.md) for the sanitized topology, the
+  variable→CLI mapping, and the 2-VTEP limitation note.
 
 > MLAG and other feature CLI syntax can vary by switch model and firmware. Treat
 > the device CLI guide and context-sensitive `?` help as the source of truth and

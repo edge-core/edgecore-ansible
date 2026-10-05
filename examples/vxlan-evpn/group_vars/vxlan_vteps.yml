@@ -1,0 +1,66 @@
+---
+# =============================================================================
+# examples/vxlan-evpn/group_vars/vxlan_vteps.yml
+# Connection settings + the SHARED (identical-on-both-switches) part of the
+# VXLAN BGP-EVPN data model. Per-switch differences live in
+# host_vars/vtep_{a,b}.yml.
+#
+# Mirrors inventory/group_vars/edgecore_switches.yml from the project root.
+# Contains ZERO real secrets: replace the placeholder credentials and prefer
+# Ansible Vault (see the main README "Security" section).
+# =============================================================================
+
+# --- Connection method ---
+ansible_connection: ansible.netcommon.network_cli
+# This project's own network platform plugins (terminal + cliconf) shipped in
+# the edgecore.edgecos collection make the generic ansible.netcommon.cli_command
+# module work robustly against Edge-core ECS switches.
+ansible_network_os: edgecore.edgecos.edgecore
+
+# --- Credentials (PLACEHOLDERS: replace and prefer Ansible Vault) ---
+ansible_user: admin
+ansible_password: "YourPassword"
+# Privileged EXEC (enable). Leave the password empty if your switch has none.
+ansible_become: true
+ansible_become_method: ansible.netcommon.enable
+ansible_become_password: ""
+
+# --- Timeouts (save can take longer than normal commands) ---
+ansible_command_timeout: 60
+ansible_connect_timeout: 30
+
+# =============================================================================
+# Shared VXLAN BGP-EVPN data model (identical on both VTEPs)
+# =============================================================================
+
+# Run "copy running-config startup-config" at the end of the playbook.
+vxlan_save_config: true
+
+# Underlay VLAN whose SVI carries the VTEP source IP (the tunnel endpoint).
+#   CLI: interface vlan <underlay_vlan> / ip address <vtep_ip> ...
+#        vxlan source-interface vlan <underlay_vlan>
+underlay_vlan: 20
+
+# Layer-2 VNI: bridges the access VLAN across the VXLAN tunnel (MAC learning).
+#   CLI: vxlan vni <l2_vni> / vxlan vni <l2_vni> access-port interface <port>
+#        vxlan vni <l2_vni> flood r-vtep <remote_vtep_ip>
+l2_vni: 2000
+
+# Layer-3 VNI: provides inter-subnet routing in the VRF via BGP-EVPN.
+#   CLI: vxlan vni <l3_vni> / vxlan vni <l3_vni> vrf <vrf>
+#        vxlan vni <l3_vni> flood protocol bgp-evpn
+l3_vni: 3000
+
+# Tenant VRF that the L3 VNI and the access VLAN are bound into.
+#   CLI: ip vrf <vrf> / ip vrf bind <vrf> <access_vlan>
+vrf: "even"
+
+# BGP Autonomous System number. Both VTEPs share the SAME ASN here (iBGP),
+# matching the source design (A and B are both 65100).
+#   CLI: router bgp <bgp_asn> / neighbor <remote_vtep_ip> remote-as <bgp_asn>
+bgp_asn: 65100
+
+# Customer-facing access port that the L2 VNI maps to on each switch.
+#   CLI: interface <access_port> / switchport ...
+#        vxlan vni <l2_vni> access-port interface <access_port>
+access_port: "ethernet 1/1"
