@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# examples/config-backup/group_vars/edgecore_switches.yml
+# Connection settings + the read-only config-backup parameters shared by all
+# switches in the edgecore_switches group.
+#
+# Mirrors inventory/group_vars/edgecore_switches.yml from the project root and
+# the sibling examples. Contains ZERO real secrets: replace the placeholder
+# credentials and prefer Ansible Vault (see the main README "Security" section).
+# =============================================================================
+
+# --- Connection method ---
+ansible_connection: ansible.netcommon.network_cli
+# This project's own network platform plugins (terminal + cliconf) shipped in
+# the edgecore.edgecos collection make the generic ansible.netcommon.cli_command
+# module work robustly against Edge-core ECS switches.
+ansible_network_os: edgecore.edgecos.edgecore
+
+# --- Credentials (PLACEHOLDERS: replace and prefer Ansible Vault) ---
+ansible_user: admin
+ansible_password: "YourPassword"
+# Privileged EXEC (enable). Leave the password empty if your switch has none.
+# "show running-config" generally requires privileged EXEC, so enable here.
+ansible_become: true
+ansible_become_method: ansible.netcommon.enable
+ansible_become_password: ""
+
+# --- Timeouts (show running-config can be large on busy switches) ---
+ansible_command_timeout: 60
+ansible_connect_timeout: 30
+
+# =============================================================================
+# Read-only config-backup parameters
+# =============================================================================
+
+# Where backups are written ON THE CONTROL NODE (relative to this example
+# directory, or set an absolute path). Created automatically if missing.
+# One timestamped .cfg per host lands here; nothing is written to the device.
+backup_output_dir: "./output"

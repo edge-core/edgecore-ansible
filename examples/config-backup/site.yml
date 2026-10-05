@@ -1,0 +1,102 @@
+---
+# =============================================================================
+# examples/config-backup/site.yml
+# READ-ONLY running-config backup from a group of Edge-core Enterprise Switches.
+#
+# For every host in the edgecore_switches group this play runs
+# "show running-config" and saves the raw stdout VERBATIM to a timestamped
+# per-host .cfg backup. The backup lands LOCALLY on the control node under
+# backup_output_dir; one .cfg file per host per run.
+#
+# STRICTLY READ-ONLY: every device command is a "show" command run through
+# ansible.netcommon.cli_command with changed_when: false. There is NO
+# "configure", NO "copy running-config startup-config", NO parsing, NO change
+# of any kind. This play NEVER modifies a device.
+#
+# NOTE: running-config format can vary by switch model and firmware, but the
+# backup is saved verbatim so it is always a faithful snapshot. See README.
+# =============================================================================
+# -----------------------------------------------------------------------------
+# Setup play (control node only): compute ONE run-wide timestamp and create the
+# local output directory before any host is touched. Running this on localhost
+# once -- rather than with run_once on the device play -- gives every host the
+# SAME stamp regardless of the execution strategy. gather_facts is false (keeps
+# everything fast and device-free), so ansible_date_time is unavailable; the
+# pipe lookup on the control node is the dependency-free way to get the stamp.
+# -----------------------------------------------------------------------------
+- name: "Prepare the control node for config backup"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    # group_vars/edgecore_switches.yml does not apply to localhost, so mirror
+    # the default here. Override both with -e backup_output_dir=... if you
+    # change the location.
+    backup_output_dir: "./output"
+
+  tasks:
+    - name: "Compute one run-wide timestamp"
+      ansible.builtin.set_fact:
+        run_ts: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+
+    - name: "Ensure the local output directory exists"
+      ansible.builtin.file:
+        path: "{{ backup_output_dir }}"
+        state: directory
+        mode: "0755"
+
+# -----------------------------------------------------------------------------
+# Backup play: run only READ-ONLY show commands against each switch and write
+# the raw running-config locally. run_ts is read from the localhost setup play
+# via hostvars so every host shares the single stamp.
+# -----------------------------------------------------------------------------
+- name: "Back up read-only running-config from Edge-core switches"
+  hosts: edgecore_switches
+  gather_facts: false
+
+  vars:
+    # The one run-wide timestamp computed by the setup play above.
+    run_ts: "{{ hostvars['localhost'].run_ts }}"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 0) Read-only connection pre-check (safe; never reports changed)
+    # -------------------------------------------------------------------------
+    - name: "Pre-check: switch version (connection health)"
+      ansible.netcommon.cli_command:
+        command: "show version"
+      register: backup_version
+      changed_when: false
+      # Harmless if the model prints a different banner; keep going regardless.
+      failed_when: false
+
+    - name: "Show pre-check output"
+      ansible.builtin.debug:
+        var: backup_version.stdout_lines | default([])
+
+    # -------------------------------------------------------------------------
+    # 1) Collect the running-config (READ-ONLY, never changed)
+    # -------------------------------------------------------------------------
+    - name: "Collect: show running-config"
+      ansible.netcommon.cli_command:
+        command: "show running-config"
+      register: backup_runcfg_raw
+      changed_when: false
+
+    # -------------------------------------------------------------------------
+    # 2) Save the running-config VERBATIM (raw stdout, no parsing) to the
+    #    control node (delegate_to: localhost). mode 0600 because a real
+    #    running-config can contain device secrets.
+    # -------------------------------------------------------------------------
+    - name: "Save running-config backup VERBATIM (raw stdout, no parsing)"
+      ansible.builtin.copy:
+        content: "{{ backup_runcfg_raw.stdout }}\n"
+        dest: "{{ backup_output_dir }}/{{ inventory_hostname }}_running-config_{{ run_ts }}.cfg"
+        mode: "0600"
+      delegate_to: localhost
+
+    - name: "Report written file"
+      ansible.builtin.debug:
+        msg:
+          - "{{ backup_output_dir }}/{{ inventory_hostname }}_running-config_{{ run_ts }}.cfg"

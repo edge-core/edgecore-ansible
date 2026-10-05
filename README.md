@@ -337,6 +337,18 @@ IPs).
   per-switch peer-VTEP symmetry in `host_vars`. See its
   [README](examples/vxlan-evpn/README.md) for the sanitized topology, the
   variable→CLI mapping, and the 2-VTEP limitation note.
+- [`examples/facts-audit/`](examples/facts-audit/) — **read-only MAC/ARP table
+  collection** (parsed to JSON/CSV). Runs only `show` commands with
+  `changed_when: false` (never changes a device), parses the tables with
+  dependency-free Jinja2 regex, and writes timestamped per-host files on the
+  control node. See its [README](examples/facts-audit/README.md) for the parsing
+  approach, the output layout, and the data-sensitivity notes.
+- [`examples/config-backup/`](examples/config-backup/) — **read-only
+  running-config backup** (one timestamped `.cfg` per device). Runs only
+  `show running-config` with `changed_when: false` (never changes a device) and
+  saves the raw output verbatim on the control node. See its
+  [README](examples/config-backup/README.md) for use cases and the
+  data-sensitivity notes.
 
 > MLAG and other feature CLI syntax can vary by switch model and firmware. Treat
 > the device CLI guide and context-sensitive `?` help as the source of truth and

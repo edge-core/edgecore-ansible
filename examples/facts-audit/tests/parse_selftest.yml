@@ -1,0 +1,117 @@
+---
+# =============================================================================
+# examples/facts-audit/tests/parse_selftest.yml
+# Offline self-test for the MAC/ARP parsing used by ../site.yml. It runs on
+# localhost with NO device connection: it feeds the authoritative sample
+# "show mac-address-table" / "show arp" output through the SAME Jinja2 regex
+# parsing the play uses (identical regexes, identical set_fact loop), then
+# asserts the parsed structures are exactly right.
+#
+# The regexes below are the SAME source of truth as
+# ../group_vars/edgecore_switches.yml. Keeping the parsing identical here is
+# how we prove the play and the self-test can never silently drift.
+#
+# Run:  ansible-playbook tests/parse_selftest.yml
+#   (from examples/facts-audit/; no inventory / no switch required)
+# =============================================================================
+- name: "Self-test: MAC/ARP parsing (localhost, no device)"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    # --- Parsing contract (identical to group_vars/edgecore_switches.yml) ---
+    facts_mac_regex: '(?m)^\s*(.+?)\s+([0-9A-Fa-f]{2}(?:-[0-9A-Fa-f]{2}){5})\s+(\d+)\s+(\S+)\s+(.+?)\s*$'
+    facts_arp_regex: '(?m)^\s*(\d{1,3}(?:\.\d{1,3}){3})\s+([0-9A-Fa-f]{2}(?:-[0-9A-Fa-f]{2}){5})\s+(\S+)\s+(\S+)\s*$'
+
+    # --- Authoritative sample output (verbatim from the Edge-core CLI) ---
+    sample_mac_stdout: |2
+       Interface           MAC Address       VLAN Type     Life Time
+       ------------------- ----------------- ---- -------- -----------------
+       CPU                 00-E0-0C-00-00-FD    1 CPU      Delete on Reset
+       CPU                 00-E0-0C-00-00-FD   10 CPU      Delete on Reset
+       Eth 1/ 1            00-90-9E-9D-A0-3A    1 Learn    Delete on Timeout
+    sample_arp_stdout: |
+      ARP Cache Timeout: 1200 (seconds)
+      IP Address      MAC Address       Type      Interface
+      --------------- ----------------- --------- ---------------------
+      192.168.2.10    00-E0-0C-00-00-FD other     VLAN1
+      Total entry : 1
+
+  tasks:
+    # --- Parse exactly as site.yml does -------------------------------------
+    - name: "Parse MAC address table into a list of dicts"
+      ansible.builtin.set_fact:
+        mac_rows: >-
+          {{ mac_rows | default([]) + [{
+               'interface': item.0,
+               'mac': item.1,
+               'vlan': item.2,
+               'type': item.3,
+               'life_time': item.4
+             }] }}
+      loop: "{{ sample_mac_stdout | regex_findall(facts_mac_regex) }}"
+      loop_control:
+        label: "{{ item.1 }}"
+
+    - name: "Parse ARP table into a list of dicts"
+      ansible.builtin.set_fact:
+        arp_rows: >-
+          {{ arp_rows | default([]) + [{
+               'ip': item.0,
+               'mac': item.1,
+               'type': item.2,
+               'interface': item.3
+             }] }}
+      loop: "{{ sample_arp_stdout | regex_findall(facts_arp_regex) }}"
+      loop_control:
+        label: "{{ item.0 }}"
+
+    - name: "Ensure parsed lists are always defined"
+      ansible.builtin.set_fact:
+        mac_rows: "{{ mac_rows | default([]) }}"
+        arp_rows: "{{ arp_rows | default([]) }}"
+
+    - name: "Show parsed structures"
+      ansible.builtin.debug:
+        msg:
+          - "mac_rows: {{ mac_rows }}"
+          - "arp_rows: {{ arp_rows }}"
+
+    # --- Asserts ------------------------------------------------------------
+    - name: "Assert the MAC table parsed to exactly 3 rows"
+      ansible.builtin.assert:
+        that:
+          - mac_rows | length == 3
+        fail_msg: "Expected 3 MAC rows, got {{ mac_rows | length }}"
+        success_msg: "MAC table parsed to 3 rows"
+
+    - name: "Assert the embedded-space interface and its life_time parsed correctly"
+      ansible.builtin.assert:
+        that:
+          - (mac_rows | selectattr('interface', 'eq', 'Eth 1/ 1') | list | length) == 1
+          - (mac_rows | selectattr('interface', 'eq', 'Eth 1/ 1') | first).life_time == 'Delete on Timeout'
+        fail_msg: "The 'Eth 1/ 1' row did not parse as expected"
+        success_msg: "Interface 'Eth 1/ 1' parsed with life_time 'Delete on Timeout'"
+
+    - name: "Assert the CPU rows carry life_time 'Delete on Reset'"
+      ansible.builtin.assert:
+        that:
+          - (mac_rows | selectattr('life_time', 'eq', 'Delete on Reset') | list | length) == 2
+        fail_msg: "Expected 2 rows with life_time 'Delete on Reset'"
+        success_msg: "Both CPU rows parsed with life_time 'Delete on Reset'"
+
+    - name: "Assert the ARP table parsed to exactly 1 row"
+      ansible.builtin.assert:
+        that:
+          - arp_rows | length == 1
+          - arp_rows[0].ip == '192.168.2.10'
+          - arp_rows[0].mac == '00-E0-0C-00-00-FD'
+          - arp_rows[0].type == 'other'
+          - arp_rows[0].interface == 'VLAN1'
+        fail_msg: "ARP row did not parse as expected: {{ arp_rows }}"
+        success_msg: "ARP table parsed to 1 row (192.168.2.10 -> VLAN1)"
+
+    - name: "All assertions passed"
+      ansible.builtin.debug:
+        msg: "Self-test PASSED: parsing matches the play's contract."

@@ -1,0 +1,14 @@
+{# =============================================================================
+   mac_table.csv.j2
+   Dependency-free CSV for the parsed MAC address table. The play passes the
+   parsed list of dicts as "rows" via copy: content="{{ lookup('template', ...) }}".
+
+   One header line, then one comma-joined data line per dict. The MAC-table
+   fields (interface, mac, vlan, type, life_time) contain NO commas on Edge-core
+   firmware, so no RFC-4180 quoting/escaping is needed here. If you adapt this
+   example to firmware whose values can contain commas, add quoting.
+   ============================================================================= #}
+interface,mac,vlan,type,life_time
+{% for r in rows %}
+{{ r.interface }},{{ r.mac }},{{ r.vlan }},{{ r.type }},{{ r.life_time }}
+{% endfor %}

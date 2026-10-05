@@ -394,6 +394,17 @@ ansible-playbook site.yml --ask-vault-pass</code></pre>
     <code>ansible.netcommon.cli_command</code>), modeling the per-switch peer-VTEP symmetry in
     <code>host_vars</code>. See <code>examples/vxlan-evpn/README.md</code> for the sanitized topology,
     the variable&rarr;CLI mapping, and the 2-VTEP limitation note.</p>
+    <p><code>examples/facts-audit/</code> is a <strong>read-only MAC/ARP table collection</strong>
+    example (parsed to JSON/CSV). Every device command is a <code>show</code> with
+    <code>changed_when: false</code>, so it never changes a device; the tables are parsed with
+    dependency-free Jinja2 regex and written as timestamped per-host files on the control node. See
+    <code>examples/facts-audit/README.md</code> for the parsing approach, the output layout, and the
+    data-sensitivity notes.</p>
+    <p><code>examples/config-backup/</code> is a <strong>read-only running-config backup</strong>
+    example (one timestamped <code>.cfg</code> per device). It runs only
+    <code>show running-config</code> with <code>changed_when: false</code>, so it never changes a
+    device, and saves the raw output verbatim on the control node. See
+    <code>examples/config-backup/README.md</code> for use cases and the data-sensitivity notes.</p>
     <div class="note">MLAG and other feature CLI syntax can vary by switch model and firmware. Treat the
     device CLI guide and context-sensitive <code>?</code> help as the source of truth and adjust the
     example's templates if your model differs.</div>

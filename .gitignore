@@ -31,6 +31,18 @@ tests/output/
 # --- Device config backups (contain real device secrets: enable password, IPs) ---
 backups/
 
+# --- facts-audit example: collected facts (MAC/ARP JSON+CSV, running-config
+#     backups) may contain real device secrets/IPs. Keep the tracked .gitkeep
+#     so the directory stays discoverable. ---
+examples/facts-audit/output/*
+!examples/facts-audit/output/.gitkeep
+
+# --- config-backup example: running-config .cfg backups contain real device
+#     secrets/IPs (enable password, SNMP communities). Keep the tracked
+#     .gitkeep so the directory stays discoverable. ---
+examples/config-backup/output/*
+!examples/config-backup/output/.gitkeep
+
 # --- Raw customer device configs (contain real secrets/IPs; keep only derived, sanitized examples) ---
 example-topology/
 
