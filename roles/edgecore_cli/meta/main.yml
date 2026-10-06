@@ -1,9 +1,0 @@
----
-galaxy_info:
-  role_name: edgecore_cli
-  author: Your Team
-  description: Configure an Edge-core Enterprise Switch over the generic network_cli connection (VLAN / interfaces / SVI / save)
-  license: MIT
-  min_ansible_version: "2.14"
-  platforms: []
-dependencies: []

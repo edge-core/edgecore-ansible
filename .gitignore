@@ -1,5 +1,5 @@
 # =============================================================================
-# .gitignore for the edgecore-ansible project
+# .gitignore for the edgecore.edgecos collection repo
 # =============================================================================
 
 # --- Python virtual environments (local, large; never commit) ---
@@ -18,41 +18,24 @@ __pycache__/
 
 # --- Built Ansible collection artifacts (rebuild with `ansible-galaxy collection build`) ---
 *.tar.gz
-collection/ansible_collections/*/*/tests/output/
 
-# --- ansible-test / internal working artifacts ---
-.agents/
+# --- ansible-test working output (collection is at repo root) ---
 tests/output/
+
+# --- antsibull-changelog cache ---
+changelogs/.plugin-cache.yaml
 
 # --- Ansible runtime noise ---
 *.retry
 *.log
 
-# --- Device config backups (contain real device secrets: enable password, IPs) ---
+# --- agent / working dirs ---
+.agents/
+
+# --- local teaching-project remnants (never part of the collection; may hold
+#     real device secrets/IPs — keep them out of this collection branch) ---
 backups/
-
-# --- facts-audit example: collected facts (MAC/ARP JSON+CSV, running-config
-#     backups) may contain real device secrets/IPs. Keep the tracked .gitkeep
-#     so the directory stays discoverable. ---
-examples/facts-audit/output/*
-!examples/facts-audit/output/.gitkeep
-
-# --- config-backup example: running-config .cfg backups contain real device
-#     secrets/IPs (enable password, SNMP communities). Keep the tracked
-#     .gitkeep so the directory stays discoverable. ---
-examples/config-backup/output/*
-!examples/config-backup/output/.gitkeep
-
-# --- Raw customer device configs (contain real secrets/IPs; keep only derived, sanitized examples) ---
 example-topology/
-
-# --- Secrets: never commit real credentials or vault files ---
-# The committed inventory uses placeholders; keep any real/vault files out of git.
-*_vault.yml
-*vault_pass*
-.vault_pass
-inventory/group_vars/*secret*
-inventory/host_vars/*secret*
 
 # --- Editor / OS cruft ---
 .vscode/

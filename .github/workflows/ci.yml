@@ -1,0 +1,60 @@
+---
+# CI for the edgecore.edgecos collection.
+#
+# This repo root IS the collection (galaxy.yml at top level), but ansible-test
+# and ansible-galaxy require the collection to live under a path ending in
+# ansible_collections/<ns>/<name>/. So every job checks the repo out INTO
+# ansible_collections/edgecore/edgecos/ via the checkout `path:` input and
+# runs the tooling from inside that directory.
+#
+# Sanity uses `--venv` (not `--docker`): ubuntu-latest's system Python
+# includes _sqlite3, so no container is needed and the run matches the local
+# verification environment.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - name: Check out collection into ansible_collections path
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/edgecore/edgecos
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install ansible-core
+        run: python -m pip install --upgrade "ansible-core>=2.15.0"
+      - name: Install collection dependency (ansible.netcommon)
+        run: ansible-galaxy collection install ansible.netcommon
+      - name: Run ansible-test sanity
+        working-directory: ansible_collections/edgecore/edgecos
+        run: ansible-test sanity --venv --python ${{ matrix.python-version }}
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out collection into ansible_collections path
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/edgecore/edgecos
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ansible-lint + ansible-core
+        run: python -m pip install --upgrade "ansible-core>=2.15.0" ansible-lint
+      - name: Install collection dependency (ansible.netcommon)
+        run: ansible-galaxy collection install ansible.netcommon
+      - name: Run ansible-lint (production profile)
+        working-directory: ansible_collections/edgecore/edgecos
+        run: ansible-lint --profile production
